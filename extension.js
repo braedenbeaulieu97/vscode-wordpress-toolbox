@@ -4,15 +4,13 @@ const path = require('path');
 
 function stripTabStops(text) {
 	if(!text) return text;
-	// Always normalize whitespace-only arguments for functions with parens
+
 	const match = text.match(/^([a-zA-Z0-9_\\]+)\s*\(([^)]*)\)/);
-	if (match && (!match[2] || /^\s*$/.test(match[2]))) {
-		return `${match[1]}()`;
-	}
+	if(match && (!match[2] || /^\s*$/.test(match[2]))) return `${match[1]}()`;
+
 	if(/\$\{\d+:|(\$\{\d+\})|(\$\d+\b)|(\$0\b)/.test(text)) {
-		// If it matches a function name with parens but not captured above, fallback to original logic
 		const fallback = text.match(/^([a-zA-Z0-9_\\]+)\s*\(/);
-		if (fallback) return `${fallback[1]}()`;
+		if(fallback) return `${fallback[1]}()`;
 	}
 	return text;
 }
