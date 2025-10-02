@@ -1,4 +1,3 @@
-
 const vscode = require('vscode')
 const fs = require('fs')
 const path = require('path')
@@ -6,20 +5,19 @@ const path = require('path')
 class WordPressSnippetsToolbox {
 	context = null
 	snippetDir = null
-	shownOutOfSyncMessage = false
 
 	/**
-	 * The user defined Snippet Mode setting
+	 * The user defined snippet set setting
 	 */
-	getSnippetModeSetting() {
+	getSnippetSetSetting() {
 		const cfg = vscode.workspace.getConfiguration()
-		return cfg.get('wpSnippets.snippetMode', 'Full')
+		return cfg.get('wpSnippets.snippetSet', 'Full')
 	}
 	
 	/**
 	 * The actual snippets file that is being used
 	 */
-	getCurrentSnippetMode() {
+	getCurrentSnippetSet() {
 		const activeSnippetsPath = this.getActiveSnippetsPath()
 		if(fs.existsSync(activeSnippetsPath)) {
 			const content = fs.readFileSync(activeSnippetsPath, 'utf8')
@@ -29,7 +27,7 @@ class WordPressSnippetsToolbox {
 				return 'Flat'
 			}
 		}
-		// if file contains ${1:\\, it's full mode
+		// if file contains ${1:\\, it's the full set
 		return 'Full'
 	}
 	
@@ -57,44 +55,38 @@ class WordPressSnippetsToolbox {
 	
 	activate(context) {
 		this.context = context
-
-		// console.log('Activated!')
 	
 		/**
 		 * Check if the setting and the actual snippets file are out of sync
 		 * If so, prompt the user to run the action that will update the snippets.json file to their chosen setting. (Full or Flat)
 		 */
-		const snippetModeSetting = this.getSnippetModeSetting()
-		const currentSnippetMode = this.getCurrentSnippetMode()
-		if(snippetModeSetting !== currentSnippetMode) {
-			this.shownOutOfSyncMessage = true
-
+		const snippetSetSetting = this.getSnippetSetSetting()
+		const currentSnippetSet = this.getCurrentSnippetSet()
+		if(snippetSetSetting !== currentSnippetSet) {
 			vscode.window.showWarningMessage(
-				`Your chosen WordPress Snippet set is out of sync. Press "Reload now" to fix this.`,
+				`Your chosen WordPress snippet set is out of sync. Press "Reload now" to fix this.`,
 				{ modal: true },
 				'Reload Now', 'Ignore'
 			).then(selection => {
 				if(selection === 'Reload Now') {
-					if(snippetModeSetting === 'Flat') {
+					if(snippetSetSetting === 'Flat') {
 						vscode.commands.executeCommand('extension.useFlatSnippets')
 					} else {
 						vscode.commands.executeCommand('extension.useFullSnippets')
 					}
 				}
 			})
-		} else if(this.shownOutOfSyncMessage = true) {
-			this.shownOutOfSyncMessage = false
 		}
 	
 		/**
 		 * Use Full Snippets Command
-		 * Ensures that the user setting for Snippet Mode is set to Full, 
+		 * Ensures that the user setting for snippet set is set to Full, 
 		 * copies the content of the snippets-full.json file into the snippets.json file, 
 		 * then reloads VSCode
 		 */
 		this.context.subscriptions.push(vscode.commands.registerCommand('extension.useFullSnippets', async () => {
 			// console.log('Switch to Full Snippets')
-			await vscode.workspace.getConfiguration().update('wpSnippets.snippetMode', 'Full', vscode.ConfigurationTarget.Global)
+			await vscode.workspace.getConfiguration().update('wpSnippets.snippetSet', 'Full', vscode.ConfigurationTarget.Global)
 			const fullSnippetsPath = this.getFullSnippetsPath()
 			const activeSnippetsPath = this.getActiveSnippetsPath()
 			try {
@@ -112,13 +104,13 @@ class WordPressSnippetsToolbox {
 	
 		/**
 		 * Use Flat Snippets Command
-		 * Ensures that the user setting for Snippet Mode is set to Flat, 
+		 * Ensures that the user setting for snippet set is set to Flat, 
 		 * copies the content of the snippets-flat.json file into the snippets.json file, 
 		 * then reloads VSCode
 		 */
 		this.context.subscriptions.push(vscode.commands.registerCommand('extension.useFlatSnippets', async () => {
 			// console.log('Switch to Flat Snippets')
-			await vscode.workspace.getConfiguration().update('wpSnippets.snippetMode', 'Flat', vscode.ConfigurationTarget.Global)
+			await vscode.workspace.getConfiguration().update('wpSnippets.snippetSet', 'Flat', vscode.ConfigurationTarget.Global)
 			const flatSnippetsPath = this.getFlatSnippetsPath()
 			const activeSnippetsPath = this.getActiveSnippetsPath()
 			try {
@@ -135,13 +127,13 @@ class WordPressSnippetsToolbox {
 		}))
 	
 		/**
-		 * Listen for changes to the snippet mode setting and trigger the respective command
+		 * Listen for changes to the snippet set setting and trigger the respective command
 		 */
 		context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-			if(event.affectsConfiguration('wpSnippets.snippetMode')) {
+			if(event.affectsConfiguration('wpSnippets.snippetSet')) {
 				const cfg = vscode.workspace.getConfiguration()
-				const snippetMode = cfg.get('wpSnippets.snippetMode', 'Full')
-				if(snippetMode === 'Flat') {
+				const snippetSet = cfg.get('wpSnippets.snippetSet', 'Full')
+				if(snippetSet === 'Flat') {
 					vscode.commands.executeCommand('extension.useFlatSnippets')
 				} else {
 					vscode.commands.executeCommand('extension.useFullSnippets')

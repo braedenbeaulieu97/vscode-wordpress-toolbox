@@ -1,7 +1,7 @@
 {
     "name": "wordpress-toolbox",
     "displayName": "WordPress Snippets",
-    "description": "The ultimate WordPress snippet collection. WordPress 6.0",
+    "description": "The ultimate WordPress snippet collection. WordPress 6.8.3",
     "version": "1.4.0-beta",
     "publisher": "wordpresstoolbox",
     "engines": {
@@ -22,7 +22,7 @@
         "configuration": {
             "title": "WordPress Snippets",
             "properties": {
-                "wpSnippets.snippetMode": {
+                "wpSnippets.snippetSet": {
                     "type": "string",
                     "enum": ["Full", "Flat"],
                     "default": "Full",
