@@ -1,92 +1,97 @@
+
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 
-function stripTabStops(text) {
-	if(!text) return text;
-
-	const match = text.match(/^([a-zA-Z0-9_\\]+)\s*\(([^)]*)\)/);
-	if(match && (!match[2] || /^\s*$/.test(match[2]))) return `${match[1]}()`;
-
-	if(/\$\{\d+:|(\$\{\d+\})|(\$\d+\b)|(\$0\b)/.test(text)) {
-		const fallback = text.match(/^([a-zA-Z0-9_\\]+)\s*\(/);
-		if(fallback) return `${fallback[1]}()`;
-	}
-	return text;
+function getSnippetMode() {
+	const cfg = vscode.workspace.getConfiguration()
+	return cfg.get('wpSnippets.snippetMode', 'Full')
 }
 
-/** Load snippets JSON bundled with the extension. */
-function loadSnippets(extensionPath) {
-  const jsonPath = path.join(extensionPath, 'snippets', 'snippets.json');
-  try {
-		const raw = fs.readFileSync(jsonPath, 'utf8');
-		const data = JSON.parse(raw);
-		if(typeof data !== 'object' || !data) throw new Error('Invalid JSON root');
-		return data; // { 'Label': { prefix, body, description } }
-  } catch (err) {
-		console.error('[wp-snippets] Failed to load snippets:', err);
-		vscode.window.showErrorMessage('WordPress snippets: failed to load snippets.json. See console for details.');
-		return {};
-  }
+function getSnippetsDir(context) {
+	return path.join(context.extensionPath, 'snippets')
 }
 
-/** Build CompletionItems from a snippet map entry. */
-function buildItemsFromEntry(label, spec, flatMode) {
-  const items = [];
-  if(!spec) return items;
+function getFullSnippetsPath(context) {
+	const snippetDir = getSnippetsDir(context)
+	return path.join(snippetDir, 'snippets-full.json')
+}
 
-  const prefixes = Array.isArray(spec.prefix) ? spec.prefix : [spec.prefix];
-  const bodyStr = Array.isArray(spec.body) ? spec.body.join('\n') : String(spec.body ?? '');
+function getFlatSnippetsPath(context) {
+	const snippetDir = getSnippetsDir(context)
+	return path.join(snippetDir, 'snippets-flat.json')
+}
 
-  for(const p of prefixes) {
-    if(!p) continue;
-    const item = new vscode.CompletionItem(p, vscode.CompletionItemKind.Snippet);
-    item.detail = label;
-    if(spec.description) {
-      	item.documentation = new vscode.MarkdownString(spec.description);
-    }
-
-    if(flatMode) {
-      	item.insertText = stripTabStops(bodyStr);
-    } else {
-      	item.insertText = new vscode.SnippetString(bodyStr);
-    }
-
-    item.sortText = '0_' + p;
-    items.push(item);
-  }
-  return items;
+function getActiveSnippetsPath(context) {
+	const snippetDir = getSnippetsDir(context)
+	return path.join(snippetDir, 'snippets.json')
 }
 
 function activate(context) {
-	vscode.window.showInformationMessage('Minimal extension activated!');
-
-	const snippets = loadSnippets(context.extensionPath);
-
-	const provider = vscode.languages.registerCompletionItemProvider(
-		{ language: 'php' },
-		{
-			provideCompletionItems() {
-				const cfg = vscode.workspace.getConfiguration();
-				const flat = cfg.get('wpSnippets.removeArguments', false);
-
-				const all = [];
-				for(const [label, spec] of Object.entries(snippets)) {
-					all.push(...buildItemsFromEntry(label, spec, flat));
-				}
-				return all;
+	console.log('Activated!')
+	/**
+	 * Use Full Snippets Command
+	 * Ensures that the user setting for Snippet Mode is set to Full, 
+	 * copies the content of the snippets-full.json file into the snippets.json file, 
+	 * then reloads VSCode
+	 */
+	context.subscriptions.push(vscode.commands.registerCommand('extension.useFullSnippets', async () => {
+		// console.log('Switch to Full Snippets')
+		await vscode.workspace.getConfiguration().update('wpSnippets.snippetMode', 'Full', vscode.ConfigurationTarget.Global);
+		const fullSnippetsPath = getFullSnippetsPath(context);
+		const activeSnippetsPath = getActiveSnippetsPath(context);
+		try {
+			if(fs.existsSync(fullSnippetsPath)) {
+				fs.copyFileSync(fullSnippetsPath, activeSnippetsPath);
+				vscode.window.showInformationMessage('Switched to Full WordPress Snippets. Reloading window...');
+				vscode.commands.executeCommand('workbench.action.reloadWindow');
+			} else {
+				vscode.window.showErrorMessage('Full snippets file not found.');
 			}
-		},
-		'_'
-	);
+		} catch (e) {
+			vscode.window.showErrorMessage('Failed to switch snippet file: ' + e.message);
+		}
+	}));
 
-	context.subscriptions.push(provider);
+	/**
+	 * Use Flat Snippets Command
+	 * Ensures that the user setting for Snippet Mode is set to Flat, 
+	 * copies the content of the snippets-flat.json file into the snippets.json file, 
+	 * then reloads VSCode
+	 */
+	context.subscriptions.push(vscode.commands.registerCommand('extension.useFlatSnippets', async () => {
+		// console.log('Switch to Flat Snippets')
+		await vscode.workspace.getConfiguration().update('wpSnippets.snippetMode', 'Flat', vscode.ConfigurationTarget.Global);
+		const flatSnippetsPath = getFlatSnippetsPath(context);
+		const activeSnippetsPath = getActiveSnippetsPath(context);
+		try {
+			if(fs.existsSync(flatSnippetsPath)) {
+				fs.copyFileSync(flatSnippetsPath, activeSnippetsPath);
+				vscode.window.showInformationMessage('Switched to Flat WordPress Snippets. Reloading window...');
+				vscode.commands.executeCommand('workbench.action.reloadWindow');
+			} else {
+				vscode.window.showErrorMessage('Flat snippets file not found.');
+			}
+		} catch (e) {
+			vscode.window.showErrorMessage('Failed to switch snippet file: ' + e.message);
+		}
+	}));
 
-	context.subscriptions.push(
-		vscode.window.onDidChangeWindowState(state => {
-			if(!state.focused) return;
-		})
-	);
+	/**
+	 * Listen for changes to the snippet mode setting and trigger the respective command
+	 */
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+		if(event.affectsConfiguration('wpSnippets.snippetMode')) {
+			const cfg = vscode.workspace.getConfiguration();
+			const snippetMode = cfg.get('wpSnippets.snippetMode', 'Full');
+			if(snippetMode === 'Flat') {
+				vscode.commands.executeCommand('extension.useFlatSnippets');
+			} else {
+				vscode.commands.executeCommand('extension.useFullSnippets');
+			}
+		}
+	}));
+
 }
 
 function deactivate() {}

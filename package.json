@@ -13,19 +13,43 @@
     "keywords": [
         "wordpress"
     ],
-    "activationEvents": ["onLanguage:php"],
+    "activationEvents": [
+        "onLanguage:php",
+        "onStartupFinished"
+    ],
     "main": "./extension.js",
     "contributes": {
         "configuration": {
             "title": "WordPress Snippets",
             "properties": {
-                "wpSnippets.removeArguments": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Insert snippets without arguments."
+                "wpSnippets.snippetMode": {
+                    "type": "string",
+                    "enum": ["Full", "Flat"],
+                    "default": "Full",
+                    "description": "Choose which snippet set to use. (Changing this setting will reload VSCode)",
+                    "enumDescriptions": [
+                        "Use Full WordPress Snippets (with arguments)",
+                        "Use Flat WordPress Snippets (no arguments)"
+                    ]
                 }
             }
-        }
+        },
+        "snippets": [
+            {
+                "language": "php",
+                "path": "./snippets/snippets.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "extension.useFullSnippets",
+                "title": "Use Full WordPress Snippets (reloads VSCode)"
+            },
+            {
+                "command": "extension.useFlatSnippets",
+                "title": "Use Flat WordPress Snippets (reloads VSCode)"
+            }
+        ]
     },
     "icon": "images/wpprotools-icon.png",
     "license": "MIT",
@@ -38,7 +62,9 @@
         "email": "jason@elev8webstudio.com"
     },
     "dependencies": {
-        "vsce": "^1.75.0",
+        "vsce": "^1.75.0"
+    },
+    "devDependencies": {
         "vscode": "^1.1.37"
     }
 }
