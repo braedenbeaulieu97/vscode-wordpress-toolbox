@@ -2,7 +2,7 @@
     "name": "wordpress-toolbox",
     "displayName": "WordPress Snippets",
     "description": "The ultimate WordPress snippet collection. WordPress 6.0",
-    "version": "1.4.0",
+    "version": "1.4.0-beta",
     "publisher": "wordpresstoolbox",
     "engines": {
         "vscode": "^1.19.0"
