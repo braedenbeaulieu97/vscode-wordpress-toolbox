@@ -7,7 +7,7 @@
 
 ## Different Snippet Sets
 
-You can toggle between Full or Flat snippet sets. The default snippet set is Full. Please note, when you toggle this setting VSCode will automatically reload the window to load the new snippet set.
+You can toggle between Full or Flat snippet sets. The default snippet set is Full. Please note, when you toggle this setting it will automatically reload the VSCode window to load the new snippet set.
 
 
 ```php

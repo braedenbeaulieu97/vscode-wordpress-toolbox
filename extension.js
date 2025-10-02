@@ -80,22 +80,30 @@ class WordPressSnippetsToolbox {
 	
 		/**
 		 * Use Full Snippets Command
-		 * Ensures that the user setting for snippet set is set to Full, 
-		 * copies the content of the snippets-full.json file into the snippets.json file, 
-		 * then reloads VSCode
+		 * Converts the snippet set to Full
 		 */
 		this.context.subscriptions.push(vscode.commands.registerCommand('extension.useFullSnippets', async () => {
-			// console.log('Switch to Full Snippets')
+			// Ensure that the user setting for snippet set is set to Full
 			await vscode.workspace.getConfiguration().update('wpSnippets.snippetSet', 'Full', vscode.ConfigurationTarget.Global)
+
 			const fullSnippetsPath = this.getFullSnippetsPath()
+			const flatSnippetsPath = this.getFlatSnippetsPath()
 			const activeSnippetsPath = this.getActiveSnippetsPath()
 			try {
-				if(fs.existsSync(fullSnippetsPath)) {
-					fs.copyFileSync(fullSnippetsPath, activeSnippetsPath)
-					vscode.window.showInformationMessage('Switched to Full WordPress Snippets. Reloading window...')
+				// Make sure that the Full snippets file exists
+				if(fs.existsSync(fullSnippetsPath) && fs.existsSync(activeSnippetsPath)) {
+					
+					// Rename the active snippets file to snippets-flat.json
+					fs.renameSync(activeSnippetsPath, flatSnippetsPath)
+
+					// Rename the snippets-full.json file to snippets.json
+					fs.renameSync(fullSnippetsPath, activeSnippetsPath)
+
+					// Reload VSCode window
+					vscode.window.showInformationMessage('Switched to Full WordPress Snippets by renaming files. Reloading window...')
 					vscode.commands.executeCommand('workbench.action.reloadWindow')
 				} else {
-					vscode.window.showErrorMessage('Full snippets file not found.')
+					vscode.window.showErrorMessage('Required snippets file(s) not found.')
 				}
 			} catch (e) {
 				vscode.window.showErrorMessage('Failed to switch snippet file: ' + e.message)
@@ -104,22 +112,30 @@ class WordPressSnippetsToolbox {
 	
 		/**
 		 * Use Flat Snippets Command
-		 * Ensures that the user setting for snippet set is set to Flat, 
-		 * copies the content of the snippets-flat.json file into the snippets.json file, 
-		 * then reloads VSCode
+		 * Converts the snippet set to Flat
 		 */
 		this.context.subscriptions.push(vscode.commands.registerCommand('extension.useFlatSnippets', async () => {
-			// console.log('Switch to Flat Snippets')
+			// Ensure that the user setting for snippet set is set to Flat
 			await vscode.workspace.getConfiguration().update('wpSnippets.snippetSet', 'Flat', vscode.ConfigurationTarget.Global)
+
 			const flatSnippetsPath = this.getFlatSnippetsPath()
+			const fullSnippetsPath = this.getFullSnippetsPath()
 			const activeSnippetsPath = this.getActiveSnippetsPath()
 			try {
-				if(fs.existsSync(flatSnippetsPath)) {
-					fs.copyFileSync(flatSnippetsPath, activeSnippetsPath)
-					vscode.window.showInformationMessage('Switched to Flat WordPress Snippets. Reloading window...')
+				// Make sure that the Flat snippets file exists
+				if(fs.existsSync(flatSnippetsPath) && fs.existsSync(activeSnippetsPath)) {
+					
+					// Rename the active snippets file to snippets-full.json
+					fs.renameSync(activeSnippetsPath, fullSnippetsPath)
+
+					// Rename the snippets-flat.json file to snippets.json
+					fs.renameSync(flatSnippetsPath, activeSnippetsPath)
+
+					// Reload VSCode window
+					vscode.window.showInformationMessage('Switched to Flat WordPress Snippets by renaming files. Reloading window...')
 					vscode.commands.executeCommand('workbench.action.reloadWindow')
 				} else {
-					vscode.window.showErrorMessage('Flat snippets file not found.')
+					vscode.window.showErrorMessage('Required snippets file(s) not found.')
 				}
 			} catch (e) {
 				vscode.window.showErrorMessage('Failed to switch snippet file: ' + e.message)
